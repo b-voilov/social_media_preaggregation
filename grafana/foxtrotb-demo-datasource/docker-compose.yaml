@@ -1,0 +1,30 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'foxtrotb-demo-datasource'
+    platform: 'linux/amd64'
+    build:
+      context: ./.config
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
+        grafana_version: ${GRAFANA_VERSION:-10.3.3}
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/foxtrotb-demo-datasource
+      - ./provisioning:/etc/grafana/provisioning
+    depends_on:
+      - custom_datasource
+  custom_datasource:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: custom_datasource
+    ports:
+      - '4000:4000' # Adjust if your custom data source uses a different port
+    volumes:
+      - ./backend:/app # Replace 'your_custom_datasource_folder' with your Node.js source directory if necessary
+      - ./dist:/dist # Replace 'your_custom_datasource_folder' with your Node.js source directory if necessary
+      - ./src:/src # Replace 'your_custom_datasource_folder' with your Node.js source directory if necessary
+    entrypoint: ['sleep', 'infinity']
