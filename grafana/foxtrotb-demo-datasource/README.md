@@ -1,19 +1,21 @@
 # Running in dev mode
 
-1. Build frontend
+1. Run compose
+
+```
+./redeploy.dev.sh
+```
+
+2. Build frontend
+   In frontend container, `/app` directory
 
 ```
 yarn
 yarn dev
 ```
 
-2. Build backend
-
-```
-./redeploy.dev.sh
-```
-
-And then in `custom_datasource` container
+3. Build backend
+   In `custom_datasource` container
 
 ```
 ./run.sh

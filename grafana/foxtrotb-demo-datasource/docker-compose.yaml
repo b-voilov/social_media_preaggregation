@@ -16,13 +16,20 @@ services:
       - ./provisioning:/etc/grafana/provisioning
     depends_on:
       - custom_datasource
+      - frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frontend
+    volumes:
+      - .:/app # Replace 'your_custom_datasource_folder' with your Node.js source directory if necessary
+    entrypoint: ['sleep', 'infinity']
   custom_datasource:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: custom_datasource
-    ports:
-      - '4000:4000' # Adjust if your custom data source uses a different port
     volumes:
       - ./backend:/app # Replace 'your_custom_datasource_folder' with your Node.js source directory if necessary
       - ./dist:/dist # Replace 'your_custom_datasource_folder' with your Node.js source directory if necessary
