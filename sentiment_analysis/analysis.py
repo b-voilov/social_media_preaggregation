@@ -2,6 +2,7 @@
 import json
 from transformers import pipeline
 analyze_sentiment = pipeline("sentiment-analysis", model="cardiffnlp/twitter-xlm-roberta-base-sentiment") 
+# paper: https://arxiv.org/abs/2104.12250
 
 # WIP!!
 # TODO: 
