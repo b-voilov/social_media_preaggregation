@@ -11,9 +11,14 @@ torch
 requests
 '
 
-Simply run it with 
+Install them with:
 ```
-python3 analysis.py
+pip install -r requirements.txt
+```
+
+Now simply run the code:
+```
+python3 main.py
 ```
 
 The code is far from complete, but, by far it analyzes:
