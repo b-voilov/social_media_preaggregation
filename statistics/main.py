@@ -1,12 +1,18 @@
 import json
 import dynamo
 import uuid
-
+import postgres
 
 # dynamo.create_tables()
 
+# REPLACE LATER
+positive_reactions_list = ['👍', '❤', '🎉', '😁', '👍']
+negative_reactions_list = ['😡']
+neutral_reactions_list = ['🤔', '😢']
 
-def get_json(input_file):
+
+# REPLACE WITH API LATER
+def get_data(input_file):
     with open(input_file, "r", encoding="utf-8") as json_file:
         content = json.load(json_file)
     return content
@@ -14,14 +20,34 @@ def get_json(input_file):
 
 # LATER REPLACE WITH DATA FROM DB
 def get_comments_data():
-    # return {}
-    return get_json("results/new_text_comments.json")
+    return {}
+    # return get_json("results/new_text_comments.json")
 
 
-def get_youtube_statistics():
-    channels = get_json("src/channels.json")
-    comments = get_json("src/comments.json")
-    videos = get_json("src/videos.json")
+#  FILL FIRST DATA TO TRY IN GRAFANA
+def get_first_telegram_stats():
+    channel_type = "Telegram"
+    tg_file = get_data("src/example_data.json")
+    for x in tg_file.keys():
+        postgres.add_channel(channel_type, x, len(tg_file[x]))
+        for y in tg_file[x]:
+            channel = x
+            text = y["post_text"]
+            activity_time = y["datetime"]
+            postgres.add_post(channel, text, activity_time)
+            comments_count = len(y["comments"])
+            negative_reactions = 0
+            positive_reactions = len(y["reactions"])
+            neutral_reactions = 0
+            postgres.add_post_activity(activity_time, comments_count, negative_reactions, positive_reactions,
+                                       neutral_reactions)
+
+
+# WORK IN PROGRESS
+def get_first_youtube_stats():
+    channels = get_data("src/channels.json")
+    comments = get_data("src/comments.json")
+    videos = get_data("src/videos.json")
 
 
 def get_telegram_comments_count(input_file, channel_name):
@@ -99,6 +125,7 @@ def upd_comments_duplicates(input_file, channel_name, channel_type):
         # dynamo.put_new_comment(comment_id, comment, count, users)  # LATER UPDATE FOR EXISTING COMMENTS AND ADD NEW
 
 
-file = get_json("src/example_data.json")
+# postgres.create_tables()
+# get_first_telegram_stats()
 # upd_comments_duplicates(file, "@ssternenko", "Telegram")
-upd_comments_duplicates(get_json("src/comments.json"), "@ssternenko", "Youtube")
+# upd_comments_duplicates(get_data("src/comments.json"), "@ssternenko", "Youtube")

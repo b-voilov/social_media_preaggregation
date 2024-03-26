@@ -4,7 +4,11 @@ import boto3
 client = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
 
 
-def create_new_table():
+def create_tables():
+    create_comments_table()
+
+
+def create_comments_table():
     table = client.create_table(
         TableName='Comments6',
         KeySchema=[
@@ -20,7 +24,7 @@ def create_new_table():
         AttributeDefinitions=[
             {
                 'AttributeName': 'comment_id',
-                'AttributeType': 'N'
+                'AttributeType': 'S'
             },
             {
                 'AttributeName': 'count',
@@ -40,7 +44,7 @@ def put_new_comment(comment_id, comment, count, users):
         TableName='Comments6',
         Item={
             'comment_id': {
-                'N': "{}".format(comment_id),
+                'S': "{}".format(comment_id),
             },
             'count': {
                 'N': "{}".format(count),
