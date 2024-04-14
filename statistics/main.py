@@ -1,14 +1,8 @@
 import json
-import dynamo
 import uuid
 import postgres
-
-# dynamo.create_tables()
-
-# REPLACE LATER
-positive_reactions_list = ['👍', '❤', '🎉', '😁', '👍']
-negative_reactions_list = ['😡']
-neutral_reactions_list = ['🤔', '😢']
+from psycopg2.extras import Json 
+import os
 
 
 # REPLACE WITH API LATER
@@ -17,11 +11,15 @@ def get_data(input_file):
         content = json.load(json_file)
     return content
 
+# CLEAN UP LATER
+def get_json(input_file):
+    with open(input_file, "r", encoding="utf-8") as json_file:
+        content = json.load(json_file)
+    return content
 
 # LATER REPLACE WITH DATA FROM DB
-def get_comments_data():
-    return {}
-    # return get_json("results/new_text_comments.json")
+def get_comments_data(input_file):
+    return get_json(input_file)
 
 
 #  FILL FIRST DATA TO TRY IN GRAFANA
@@ -52,7 +50,7 @@ def get_first_youtube_stats():
 
 def get_telegram_comments_count(input_file, channel_name):
     config = input_file[channel_name]
-    comments_count = get_comments_data()
+    comments_count = get_comments_data("results/new_text_comments.json")
     # Looking through each post
     for x in config:
         if "comments" in x:
@@ -122,10 +120,51 @@ def upd_comments_duplicates(input_file, channel_name, channel_type):
         count = current_comment.get("comment_number")
         users = current_comment.get("users")
         comment_id = str(uuid.uuid4())
-        # dynamo.put_new_comment(comment_id, comment, count, users)  # LATER UPDATE FOR EXISTING COMMENTS AND ADD NEW
 
 
-# postgres.create_tables()
-# get_first_telegram_stats()
-# upd_comments_duplicates(file, "@ssternenko", "Telegram")
-# upd_comments_duplicates(get_data("src/comments.json"), "@ssternenko", "Youtube")
+def count(current_file):
+    path = "src/"+ current_file
+
+    with open(path, 'r', encoding="utf-8") as file:
+        data = json.load(file)
+
+    for item in data:
+        channel_id = item['id']
+        channel = item['title']
+        posts = item['posts']
+        print(f"channel: {channel} channel_id {channel_id}")
+
+        posts_quantity = len(item['posts'])
+
+        if not(postgres.exist_channel(channel_id)):
+            print(f'{channel_id} does not exist, adding...')
+            postgres.add_channel(channel_id, "Telegram", channel, posts_quantity) #TYPE CHECK
+
+        for post in posts:
+            post_id = post['post_id']
+            post_text = post['text']
+
+            if not post_text == None:
+                adapt_post_text = post_text.replace("'", "''")
+            else: 
+                post_text = ""
+                adapt_post_text = post_text
+
+            if not (postgres.exist_post(channel_id, post_id)):
+                comments_quantity = len(post['comments'])
+                all_reactions = Json(post["reactions"])
+                postgres.add_post(channel_id, post_id, adapt_post_text, post['datetime'], post['media_in_post'], 
+                                  comments_quantity, post['views'], all_reactions)
+            else:
+                print(f'Post {post_id} exists. Skipping')
+
+
+def main():
+    postgres.create_tables()
+    arr = os.listdir("src")
+    for file in arr:
+        count(file)
+     
+     
+if __name__ == "__main__":
+    main()
