@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import Json
 
 # CLEAN UP AFTER DATABASE IS FILLED?
 def create_tables():
@@ -96,15 +97,15 @@ def add_comments(text, duplicates):
     conn.close()
 
 def update_channel(channel_id, posts_count, channel_sentiment):
-    conn = psycopg2.connect(database="media_analysis",
-                            host="localhost",
-                            user="postgres",
-                            password="postgres",
-                            port="5432")
-
+    conn = psycopg2.connect(database="media_analysis", host="localhost", user="postgres", password="postgres", port="5432")
     cursor = conn.cursor()
-    cursor.execute(f'UPDATE channels SET posts_count = %s, channel_sentiment = %s WHERE id = %s',
-                   (posts_count, channel_sentiment, channel_id))
+    
+    # Wrap the channel_sentiment dictionary with Json
+    channel_sentiment_json = Json(channel_sentiment)
+    
+    cursor.execute('UPDATE channels SET posts_count = %s, channel_sentiment = %s WHERE channel_id = %s',
+                   (posts_count, channel_sentiment_json, channel_id))
+    
     conn.commit()
     cursor.close()
     conn.close()

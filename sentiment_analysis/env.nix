@@ -10,5 +10,7 @@ pkgs.mkShell {
     pkgs.python3Packages.numpy
     pkgs.python3Packages.torch
     pkgs.python3Packages.requests
+    pkgs.python3Packages.pg8000
+    pkgs.python3Packages.psycopg2
   ];
 }

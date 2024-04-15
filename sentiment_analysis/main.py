@@ -52,7 +52,12 @@ def main():
             print(f"\nanalyzing text and reactions for post: {post['datetime']}")
 
             post_text = post['post_text']
-            post_sentiment = analyze_sentiment(post_text)
+
+            if len(post_text) > 1500:
+                post_sentiment = analyze_sentiment(post_text[:int(len(post_text) * 0.15)])
+            else:
+                post_sentiment = analyze_sentiment(post_text)
+
             posts_sentiment_aggregated[post_sentiment[0]['label']] += post_sentiment[0]['score'] # <- here,
             # if we'll keep adding new sentiments forever, at some point we'll obviously exceed the
             # bounds of float in python, but, considering that float is 64bit by default, and considering our
@@ -69,7 +74,12 @@ def main():
                 comments_quantity += 1
 
                 comment_text = comment['text']
-                comment_sentiment = analyze_sentiment(comment_text)
+
+                if len(comment_text) > 1500:
+                    comment_sentiment = analyze_sentiment(comment_text[:int(len(comment_text) * 0.15)])
+                else:
+                    comment_sentiment = analyze_sentiment(comment_text)
+
                 comments_sentiment_aggregated[comment_sentiment[0]['label']] += comment_sentiment[0]['score']
                 print(f"comment sentiment: {comment_sentiment}")
 

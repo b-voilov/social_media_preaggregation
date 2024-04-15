@@ -24,10 +24,14 @@ def ratio_normalization(sentiments):
         positives_percentage = round((sentiments['positive'] / total) * 100, 3)
         negatives_percentage = round((sentiments['negative'] / total) * 100, 3)
         neutrals_percentage = round((sentiments['neutral'] / total) * 100, 3)
-
+    else:
+        positives_percentage = 0
+        negatives_percentage = 0
+        neutrals_percentage = 0
         print(f"positives: {positives_percentage}; negatives {negatives_percentage}; neutrals: {neutrals_percentage}")
-        #return positives_percentage, negatives_percentage, neutrals_percentage
-        return {"positive": positives_percentage, "negative": negatives_percentage, "neutral": neutrals_percentage} #sentiments
+    
+    return {"positive": positives_percentage, "negative": negatives_percentage, "neutral": neutrals_percentage}
+
 
 
 def check_comment(comment):
@@ -100,7 +104,10 @@ def analyse(current_file):
                 adapt_post_text = post_text
 
             if not (postgres.exist_post(channel_id, post_id)):
-                post_sentiment = analyze_sentiment(post_text)
+                if len(post_text) > 1500:
+                    post_sentiment = analyze_sentiment(post_text[:int(len(post_text) * 0.15)])
+                else:
+                    post_sentiment = analyze_sentiment(post_text)
                 print(f"\nanalyzing text and reactions for post: {post['datetime']}")
                 posts_sentiment_aggregated[post_sentiment[0]['label']] += post_sentiment[0]['score'] # <- here,
                 # if we'll keep adding new sentiments forever, at some point we'll obviously exceed the
@@ -119,7 +126,11 @@ def analyse(current_file):
                     check_comment(comment)
 
                     comment_text = comment['text']
-                    comment_sentiment = analyze_sentiment(comment_text)
+
+                    if len(comment_text) > 1500:
+                        comment_sentiment = analyze_sentiment(comment_text[:int(len(comment_text) * 0.15)])
+                    else:
+                        comment_sentiment = analyze_sentiment(comment_text)
                     comments_sentiment_aggregated[comment_sentiment[0]['label']] += comment_sentiment[0]['score']
                     print(f"comment sentiment: {comment_sentiment}")
 
