@@ -41,7 +41,9 @@ def create_tables():
                    "isMedia BOOLEAN,"
                    "comments_count int,"
                    "view_count int,"
-                   "reactions jsonb)".format(table_posts))
+                   "reactions jsonb,"
+                   "post_sentiment jsonb,"
+                   "reaction_sentiment jsonb)".format(table_posts))
         
     cursor.execute("select * from information_schema.tables where table_name = '{0}'".format(table_comments))
     if not (bool(cursor.rowcount)):
@@ -129,6 +131,36 @@ def update_channel(channel_id, channel_sentiment):
     conn.close()
 
 
+def update_post_sentiment(channel_id, post_id, post_sentiment):
+    conn = database_credentials()
+    cursor = conn.cursor()
+    
+    # Wrap the channel_sentiment dictionary with Json
+    post_sentiment_json = Json(post_sentiment)
+    
+    cursor.execute('UPDATE post SET post_sentiment = %s WHERE channel_id=%s and post_id = %s',
+                   (post_sentiment_json, channel_id, post_id))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def update_reaction_sentiment(channel_id, post_id, reaction_sentiment):
+    conn = database_credentials()
+    cursor = conn.cursor()
+    
+    # Wrap the channel_sentiment dictionary with Json
+    reaction_sentiment_json = Json(reaction_sentiment)
+    
+    cursor.execute('UPDATE post SET reaction_sentiment = %s WHERE channel_id=%s and post_id = %s',
+                   (reaction_sentiment_json, channel_id, post_id))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
 def update_comment_duplicates(text, statistics):
     conn = database_credentials()
 
@@ -185,3 +217,5 @@ def exist_comment_text(text):
     cursor = conn.cursor()
     cursor.execute("select * from comments where text = '{0}'".format(text))
     return bool(cursor.rowcount)
+
+

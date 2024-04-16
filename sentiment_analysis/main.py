@@ -59,6 +59,7 @@ def analyse(current_file):
 
         for post in posts:
             post_text = post['text']
+            post_id = post['post_id']
             
             if post_text == None:
                 post_text = ""
@@ -77,7 +78,8 @@ def analyse(current_file):
                 # push post_sentiment
 
             print(f"post sentiment: {post_sentiment}")
-                
+            postgres.update_post_sentiment(channel_id, post_id, post_sentiment)
+
             sentiments = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
 
             for comment in post.get('comments', []):
@@ -117,6 +119,7 @@ def analyse(current_file):
                 label = reaction_sentiment[0]['label']
                 sentiments[label] += reaction_sentiment[0]['score'] * reaction['count']
                 
+                #postgres.update_reaction_sentiment(channel_id, post_id, )
                 # now push reaction_sentiment (likes/dislikes) for this post
                 
             ratio_normalization(sentiments) # return ratio, push it too
