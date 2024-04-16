@@ -127,7 +127,7 @@ def update_channel(channel_id, channel_sentiment, post_sentiment, comment_sentim
     comment__sentiment_json = Json(comment_sentiment)
     reaction_sentiment_json = Json(reaction_sentiment)
     
-    cursor.execute('UPDATE channels SET channel_sentiment = %s, post_sentiment = %s, comment_srntiment = %s, reaction_sentiment  = %s WHERE channel_id = %s',
+    cursor.execute('UPDATE channels SET channel_sentiment = %s, post_sentiment = %s, comment_sentiment = %s, reaction_sentiment  = %s WHERE channel_id = %s',
                    (channel_sentiment_json, post_sentiment_json, comment__sentiment_json, reaction_sentiment_json, channel_id))
     
     conn.commit()
