@@ -1,11 +1,20 @@
 import psycopg2
+import os
+# Establish a connection to the PostgreSQL database
+# Get credentials from environment variables
+host = os.environ.get('DB_HOST')
+port = os.environ.get('DB_PORT')
+user = os.environ.get('DB_USER')
+password = os.environ.get('DB_PASSWORD')
+database = os.environ.get('DB_DATABASE')
+
 # Establish a connection to the PostgreSQL database
 conn = psycopg2.connect(
-  host="media-analysis.ctswok4gi0gq.us-east-1.rds.amazonaws.com",
-  port=5432,
-  user="postgres",
-  password="5T2FkWFcR49k",
-  database="media_analysis"
+  host=host,
+  port=port,
+  user=user,
+  password=password,
+  database=database
 )
 def add_channel(channel):
   cursor = conn.cursor()
