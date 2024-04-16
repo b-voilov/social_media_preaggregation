@@ -1,0 +1,8 @@
+requests
+polyglot
+six
+numpy
+pyicu
+pycld2
+morfessor
+psycopg2
