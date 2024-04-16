@@ -5,6 +5,7 @@ import postgres
 from psycopg2.extras import Json 
 import os
 
+
 analyze_sentiment = pipeline("sentiment-analysis", model="cardiffnlp/twitter-xlm-roberta-base-sentiment") 
 # paper: https://arxiv.org/abs/2104.12250
 
@@ -33,43 +34,9 @@ def ratio_normalization(sentiments):
     return {"positive": positives_percentage, "negative": negatives_percentage, "neutral": neutrals_percentage}
 
 
-
-def check_comment(comment):
-    comment_text = comment['text']
-    adapt_comment_text = comment_text.replace("'", "''")
-    comments_data = postgres.get_comments_data(adapt_comment_text)
-    if len(comments_data) > 0:
-        comments_statistics = comments_data[0][2]
-        print(comments_data)
-        print(comments_statistics)
-    else:
-        comments_statistics = {}
-    comment_users = []
-    user_data = comment["from_user"]
-    user_id = user_data["uid"]
-
-    # check if there was a comment like that before
-    if comment_text in comments_statistics:
-        comments_statistics["comment_count"] += 1
-        comment_users = comments_statistics["users"]
-        if not (user_id in comment_users):
-            comments_statistics["users"].append(user_id)
-        print(comments_statistics)
-        comments_statistics = Json(comments_statistics)
-        postgres.update_comments(adapt_comment_text, comments_statistics)
-    else:
-        comments_statistics["comment_count"] = 1
-        comments_statistics["users"] = [user_id]
-        print(comments_statistics)
-        comments_statistics = Json(comments_statistics)
-        postgres.add_comments(adapt_comment_text, comments_statistics)
-
-
-
 def analyse(current_file):
     path = "src/"+ current_file
     with open(path, 'r', encoding="utf-8") as file:
-       # print(file.read())
         data = json.load(file)
 
     reaction_sentiment_cache = {}
@@ -86,117 +53,73 @@ def analyse(current_file):
         posts = item['posts']
         print(f"channel: {channel}")
 
-        posts_quantity = 0
         posts_sentiment_aggregated = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
         comments_sentiment_aggregated = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
         reactions_sentiment_aggregated = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
-        if not (postgres.exist_channel(channel_id)):
-            postgres.add_channel(channel_id, "Telegram", channel, posts_quantity) #TYPE CHECK
 
         for post in posts:
-            posts_quantity += 1
-            post_id = post['post_id']
             post_text = post['text']
-            if not post_text == None:
-                adapt_post_text = post_text.replace("'", "''")
-            else: 
+            
+            if post_text == None:
                 post_text = ""
-                adapt_post_text = post_text
 
-            if not (postgres.exist_post(channel_id, post_id)):
-                if len(post_text) > 1500:
-                    post_sentiment = analyze_sentiment(post_text[:int(len(post_text) * 0.15)])
-                else:
-                    post_sentiment = analyze_sentiment(post_text)
-                print(f"\nanalyzing text and reactions for post: {post['datetime']}")
-                posts_sentiment_aggregated[post_sentiment[0]['label']] += post_sentiment[0]['score'] # <- here,
+            if len(post_text) > 1500:
+                post_sentiment = analyze_sentiment(post_text[:int(len(post_text) * 0.15)])
+            else:
+                post_sentiment = analyze_sentiment(post_text)
+            
+            print(f"\nanalyzing text and reactions for post: {post['datetime']}")
+            posts_sentiment_aggregated[post_sentiment[0]['label']] += post_sentiment[0]['score'] # <- here,
                 # if we'll keep adding new sentiments forever, at some point we'll obviously exceed the
                 # bounds of float in python, but, considering that float is 64bit by default, and considering our
                 # not big enough and finite analysis -- it's extremely unlikely that we will ever exceed these bounds
 
                 # push post_sentiment
 
-                print(f"post sentiment: {post_sentiment}")
+            print(f"post sentiment: {post_sentiment}")
                 
-                sentiments = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
-                comments_quantity = 0
+            sentiments = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
 
-                for comment in post.get('comments', []):
-                    comments_quantity += 1
-                    check_comment(comment)
+            for comment in post.get('comments', []):
+                comment_text = comment['text']
 
-                    comment_text = comment['text']
-
-                    if len(comment_text) > 1500:
-                        comment_sentiment = analyze_sentiment(comment_text[:int(len(comment_text) * 0.15)])
-                    else:
-                        comment_sentiment = analyze_sentiment(comment_text)
-                    comments_sentiment_aggregated[comment_sentiment[0]['label']] += comment_sentiment[0]['score']
-                    print(f"comment sentiment: {comment_sentiment}")
-
-                    label = comment_sentiment[0]['label']
-                    sentiments[label] += comment_sentiment[0]['score']
-
-                    # now push comments_quantity for this post
+                if len(comment_text) > 1500:
+                    comment_sentiment = analyze_sentiment(comment_text[:int(len(comment_text) * 0.15)])
+                else:
+                    comment_sentiment = analyze_sentiment(comment_text)
                 
-                ratio_normalization(sentiments) # push sentiment ratio for comments now
+                comments_sentiment_aggregated[comment_sentiment[0]['label']] += comment_sentiment[0]['score']
+                print(f"comment sentiment: {comment_sentiment}")
+
+                label = comment_sentiment[0]['label']
+                sentiments[label] += comment_sentiment[0]['score']
+
+                # now push comments_quantity for this post
+                
+            ratio_normalization(sentiments) # push sentiment ratio for comments now
 
 
-                sentiments = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
-                reactions = post['reactions'][:5] # analyzing only the first 5 reactions, which is enough for our estimate
+            sentiments = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
+            reactions = post['reactions'][:5] # analyzing only the first 5 reactions, which is enough for our estimate
 
-                for reaction in reactions:
-                    reaction_type = reaction['emoticon']
+            for reaction in reactions:
+                reaction_type = reaction['emoticon']
 
-                    # cache reactions for better performance / unfortunately we cant cache messages ;( 
-                    if reaction_type not in reaction_sentiment_cache:
-                        reaction_sentiment_cache[reaction_type] = analyze_sentiment(reaction_type)
+                # cache reactions for better performance / unfortunately we cant cache messages ;( 
+                if reaction_type not in reaction_sentiment_cache:
+                    reaction_sentiment_cache[reaction_type] = analyze_sentiment(reaction_type)
 
-                    reaction_sentiment = reaction_sentiment_cache[reaction_type]
-                    reactions_sentiment_aggregated[reaction_sentiment[0]['label']] += reaction_sentiment[0]['score']
+                reaction_sentiment = reaction_sentiment_cache[reaction_type]
+                reactions_sentiment_aggregated[reaction_sentiment[0]['label']] += reaction_sentiment[0]['score']
 
-                    print(f"reaction: {reaction_type} : {reaction['count']}; reaction sentiment: {reaction_sentiment}")
+                print(f"reaction: {reaction_type} : {reaction['count']}; reaction sentiment: {reaction_sentiment}")
                     
-                    label = reaction_sentiment[0]['label']
-                    sentiments[label] += reaction_sentiment[0]['score'] * reaction['count']
-
-                all_reactions = Json(post["reactions"])
-                postgres.add_post(channel_id, post_id, adapt_post_text, post['datetime'], post['media_in_post'], 
-                                  comments_quantity, post['views'], all_reactions)
+                label = reaction_sentiment[0]['label']
+                sentiments[label] += reaction_sentiment[0]['score'] * reaction['count']
                 
                 # now push reaction_sentiment (likes/dislikes) for this post
                 
-                ratio_normalization(sentiments) # return ratio, push it too
-            else:
-                print(f'Post {post_id} exists. Skipping')
-
-
-        # if posts_sentiment_aggregated["positive"] is None:
-        #     posts_sentiment_aggregated["positive"] = 0
-        
-        # if posts_sentiment_aggregated["negative"] is None:
-        #     posts_sentiment_aggregated["negative"] = 0
-        
-        # if posts_sentiment_aggregated["neutral"] is None:
-        #     posts_sentiment_aggregated["neutral"] = 0
-
-        # if comments_sentiment_aggregated["positive"] is None:
-        #     comments_sentiment_aggregated["positive"] = 0
-        
-        # if comments_sentiment_aggregated["negative"] is None:
-        #     comments_sentiment_aggregated["negative"] = 0
-        
-        # if comments_sentiment_aggregated["neutral"] is None:
-        #     comments_sentiment_aggregated["neutral"] = 0
-
-        # if reactions_sentiment_aggregated["positive"] is None:
-        #     reactions_sentiment_aggregated["positive"] = 0
-        
-        # if reactions_sentiment_aggregated["negative"] is None:
-        #     reactions_sentiment_aggregated["negative"] = 0
-        
-        # if reactions_sentiment_aggregated["neutral"] is None:
-        #     reactions_sentiment_aggregated["neutral"] = 0
+            ratio_normalization(sentiments) # return ratio, push it too
 
         channel_sentiment = {
             "positive": (
@@ -216,18 +139,102 @@ def analyse(current_file):
             ),
         }
 
-        postgres.update_channel(channel_id, posts_quantity, channel_sentiment)
+        postgres.update_channel(channel_id, channel_sentiment)
 
         print(f"channel sentiment: {channel_sentiment}")
 
         # now push posts_quantity, channel_sentiment for this channel
 
 
-def main():
-    postgres.create_tables()
+def count(current_file):
+    path = "src/"+ current_file
+
+    with open(path, 'r', encoding="utf-8") as file:
+        data = json.load(file)
+
+    for item in data:
+        channel_id = item['id']
+        channel = item['title']
+        posts = item['posts']
+        print(f"channel: {channel} channel_id {channel_id}")
+
+        posts_quantity = len(item['posts'])
+
+        if not(postgres.exist_channel(channel_id)):
+            print(f'{channel_id} does not exist, adding...')
+            postgres.add_channel(channel_id, "Telegram", channel, posts_quantity) 
+
+        for post in posts:
+            post_id = post['post_id']
+            post_text = post['text']
+
+            if not post_text == None:
+                adapt_post_text = post_text.replace("'", "''")
+            else: 
+                post_text = ""
+                adapt_post_text = post_text
+
+            if not (postgres.exist_post(channel_id, post_id)):
+                all_comments = post['comments']
+                comments_quantity = len(all_comments)
+                all_reactions = Json(post["reactions"])
+                postgres.add_post(channel_id, post_id, adapt_post_text, post['datetime'], post['media_in_post'], 
+                                  comments_quantity, post['views'], all_reactions)
+
+                for comment in all_comments:
+                    check_comment(comment)
+                    user = comment['from_user']
+                    user_id = user["uid"]
+                    comment_text = comment['text']
+                    adapt_comment_text = comment_text.replace("'", "''")
+                    postgres.add_comment(channel_id, post_id, comment['id'], adapt_comment_text, comment['datetime'], user_id)
+            else:
+                print(f'Post {post_id} exists. Skipping')
+
+
+def check_comment(comment):
+    comment_text = comment['text']
+    adapt_comment_text = comment_text.replace("'", "''")
+    comment_users = []
+    user_data = comment["from_user"]
+    user_id = user_data["uid"]
+    comments_data = postgres.get_comments_duplicate_data(adapt_comment_text)
+
+    if len(comments_data) > 0:
+        comments_statistics = comments_data[0][2]
+        comments_statistics["comment_count"] += 1
+        comment_users = comments_statistics["users"]
+
+        if not (user_id in comment_users):
+            comments_statistics["users"].append(user_id)
+            comments_statistics = Json(comments_statistics)
+            postgres.update_comment_duplicates(adapt_comment_text, comments_statistics)
+    else:
+        comments_statistics = {}
+
+        if postgres.exist_comment_text(adapt_comment_text):
+            comments_statistics["comment_count"] = 2
+            comments_statistics["users"] = [user_id]
+            comments_statistics = Json(comments_statistics)
+            postgres.add_comment_duplicates(adapt_comment_text, comments_statistics)
+
+
+def get_basic_stats():
+    arr = os.listdir("src")
+    for file in arr:
+        count(file)
+
+def get_sentiment():
     arr = os.listdir("src")
     for file in arr:
         analyse(file)
-     
+   
+
+def main():
+    postgres.create_tables()
+    get_basic_stats()
+    get_sentiment()
+
+
 if __name__ == "__main__":
     main()
