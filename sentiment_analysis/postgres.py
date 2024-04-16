@@ -27,7 +27,10 @@ def create_tables():
                 "type VARCHAR(45),"
                 "name VARCHAR(45),"
                 "posts_count int,"
-                "channel_sentiment jsonb)".format(table_channels))
+                "channel_sentiment jsonb,"
+                "post_sentiment jsonb,"
+                "comment_sentiment jsonb,"
+                "reaction_sentiment jsonb)".format(table_channels))
 
     cursor.execute("select * from information_schema.tables where table_name = '{0}'".format(table_posts))
     if not (bool(cursor.rowcount)):
@@ -41,9 +44,7 @@ def create_tables():
                    "isMedia BOOLEAN,"
                    "comments_count int,"
                    "view_count int,"
-                   "reactions jsonb,"
-                   "post_sentiment jsonb,"
-                   "reaction_sentiment jsonb)".format(table_posts))
+                   "reactions jsonb)".format(table_posts))
         
     cursor.execute("select * from information_schema.tables where table_name = '{0}'".format(table_comments))
     if not (bool(cursor.rowcount)):
@@ -116,45 +117,18 @@ def add_comment_duplicates(text, duplicates):
     cursor.close()
     conn.close()
 
-def update_channel(channel_id, channel_sentiment):
+def update_channel(channel_id, channel_sentiment, post_sentiment, comment_sentiment, reaction_sentiment):
     conn = database_credentials()
     cursor = conn.cursor()
     
     # Wrap the channel_sentiment dictionary with Json
     channel_sentiment_json = Json(channel_sentiment)
-    
-    cursor.execute('UPDATE channels SET channel_sentiment = %s WHERE channel_id = %s',
-                   (channel_sentiment_json, channel_id))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def update_post_sentiment(channel_id, post_id, post_sentiment):
-    conn = database_credentials()
-    cursor = conn.cursor()
-    
-    # Wrap the channel_sentiment dictionary with Json
     post_sentiment_json = Json(post_sentiment)
-    
-    cursor.execute('UPDATE post SET post_sentiment = %s WHERE channel_id=%s and post_id = %s',
-                   (post_sentiment_json, channel_id, post_id))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def update_reaction_sentiment(channel_id, post_id, reaction_sentiment):
-    conn = database_credentials()
-    cursor = conn.cursor()
-    
-    # Wrap the channel_sentiment dictionary with Json
+    comment__sentiment_json = Json(comment_sentiment)
     reaction_sentiment_json = Json(reaction_sentiment)
     
-    cursor.execute('UPDATE post SET reaction_sentiment = %s WHERE channel_id=%s and post_id = %s',
-                   (reaction_sentiment_json, channel_id, post_id))
+    cursor.execute('UPDATE channels SET channel_sentiment = %s, post_sentiment = %s, comment_srntiment = %s, reaction_sentiment  = %s WHERE channel_id = %s',
+                   (channel_sentiment_json, post_sentiment_json, comment__sentiment_json, reaction_sentiment_json, channel_id))
     
     conn.commit()
     cursor.close()

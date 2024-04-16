@@ -78,7 +78,6 @@ def analyse(current_file):
                 # push post_sentiment
 
             print(f"post sentiment: {post_sentiment}")
-            postgres.update_post_sentiment(channel_id, post_id, post_sentiment)
 
             sentiments = {"positive": 0.0, "negative": 0.0, "neutral": 0.0}
 
@@ -119,14 +118,13 @@ def analyse(current_file):
                 label = reaction_sentiment[0]['label']
                 sentiments[label] += reaction_sentiment[0]['score'] * reaction['count']
                 
-                #postgres.update_reaction_sentiment(channel_id, post_id, )
                 # now push reaction_sentiment (likes/dislikes) for this post
                 
             ratio_normalization(sentiments) # return ratio, push it too
 
         channel_sentiment = calculate_channel_sentiment(posts_sentiment_aggregated, comments_sentiment_aggregated, reactions_sentiment_aggregated, post_weight, comment_weight, reactions_weight)
 
-        postgres.update_channel(channel_id, channel_sentiment)
+        postgres.update_channel(channel_id, channel_sentiment, posts_sentiment_aggregated, comments_sentiment_aggregated, reactions_sentiment_aggregated)
 
         print(f"channel sentiment: {channel_sentiment}")
 
