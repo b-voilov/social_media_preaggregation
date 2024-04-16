@@ -32,9 +32,9 @@ def get_sentiment(text):
 
 for channel in data:
   # Calculate the date one week ago
-  one_week_ago = datetime.datetime.now() - datetime.timedelta(weeks=1)
+  one_week_ago = datetime.datetime.now() - datetime.timedelta(weeks=3)
   start_date = one_week_ago.strftime("%Y-%m-%d 00:00:00")
-  end_date = datetime.datetime.now().strftime("%Y-%m-%d 23:59:59")
+  end_date = (datetime.datetime.now()- datetime.timedelta(weeks=2)).strftime("%Y-%m-%d 23:59:59")
 
   videos_url = f"https://youtube-team-b.vercel.app/api/channels/videos?channelId={channel['id']}&startDate={start_date}&endDate={end_date}"
   videos = requests.get(videos_url).json()
@@ -54,6 +54,7 @@ for channel in data:
     comments = requests.get(comments_url).json()
     #print(json.dumps(video, indent=4, ensure_ascii=False))
     add_video(video)
+    print(f"commets {len(comments)}")
     for comment in comments:
       sentiment = get_sentiment(comment['textDisplay'])
       comment['posSentiment'] = sentiment[0]
