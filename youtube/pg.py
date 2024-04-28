@@ -71,9 +71,11 @@ def add_video(video):
       title_pos_sentiment,
       title_neg_sentiment,
       description_pos_sentiment,
-      description_neg_sentiment
+      description_neg_sentiment,
+      speech_pos_sentiment,
+      speech_neg_sentiment
     ) VALUES (
-      %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+      %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
   ) ON CONFLICT DO NOTHING''', (
     video['id'],
     video['publishedAt'],
@@ -94,7 +96,9 @@ def add_video(video):
     video['titlePosSentiment'],
     video['titleNegSentiment'],
     video['descriptionPosSentiment'],
-    video['descriptionNegSentiment']
+    video['descriptionNegSentiment'],
+    video['speechPosSentiment'],
+    video['speechNegSentiment']
   ))
 
   conn.commit()
