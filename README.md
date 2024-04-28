@@ -1,4 +1,4 @@
-# University Course Project: Data Analysis and Visualization
+# Social Media Data Pre-aggregation
 
 ## Overview
 
