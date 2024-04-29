@@ -15,14 +15,18 @@ Install them with:
 ```
 pip install -r requirements.txt
 ```
-Update postgres credentials in file postgres.py if needed
+Get SQS queque and FTP server credentials and update them in code
 ```
-Put json files to analyse into /src folder
+Update postgres credentials in file postgres.py if needed
+
 ```
 Now simply run the code:
 ```
 python3 main.py
 ```
+
+Code subscribes to SQS queque and receives file path for file in FTP server.
+It downloads file and analyzes it.
 
 The code is far from complete, but, by far it analyzes:
 1. Post sentiment, number of posts
