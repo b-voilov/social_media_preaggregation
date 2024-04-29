@@ -4,8 +4,8 @@
 
 This repository is part of a university course project focused on analyzing and visualizing data from YouTube and Telegram. The project is split into three main teams:
 
-- **Data Loading Team - YouTube**: Responsible for extracting data from YouTube.
-- **Data Loading Team - Telegram**: Responsible for extracting data from Telegram.
+- [**Data Loading Team - YouTube**](https://github.com/CompanyB-TeamDelta): Responsible for extracting data from YouTube.
+- [**Data Loading Team - Telegram**](https://github.com/YevheniiKyr/YoutubeTeamB): Responsible for extracting data from Telegram.
 - **Data Analysis and Visualization Team**: Responsible for computing metrics, storing them in a PostgreSQL database, and visualizing them using Grafana.
 
 This repository is managed by the Data Analysis and Visualization Team. It serves as a monorepo that contains all the necessary components to precompute metrics from YouTube and Telegram data and load them into PostgreSQL for visualization.
